@@ -12,6 +12,19 @@ active [3] proctype bidder() {
   int next;
 
   // TODO
+  select( bid: 1 .. 5);
+  bids ! bid, response;
+  do
+  :: response ? won -> winner = _pid; break;
+  :: response ! reject, highestBid -> if
+          :: highestBid < 5 -> if
+                      ::  bids ! bid+1, response;
+                      :: break
+                      fi
+          :: else -> break;
+        fi 
+
+  od
 }
 
 active proctype auctioneer() {
@@ -25,4 +38,16 @@ active proctype auctioneer() {
   chan nextBidder;
 
   // TODO
+  do
+  :: bids ? nextBid, nextBidder; 
+      if
+      :: nextBid > highestBid -> int temp = highestBid; highestBid= nextBid; highestBidder = nextBidder; 
+        if
+        :: highestBid != 0 -> highestBidder ! reject, nextBid; highestBid= nextBid; highestBidder= nextBidder
+        :: else -> highestBid= nextBid; highestBidder= nextBidder
+        fi
+      :: else -> nextBidder ! reject, highestBid
+      fi
+  :: highestBid != 0 -> highestBidder ! won, highestBid; break
+  od
 }
