@@ -40,8 +40,7 @@ active proctype auctioneer() {
 
   // TODO
   do
-  :: bids ? nextBid, nextBidder; 
-      BidReceived:
+  :: bids ? nextBid, nextBidder;
       if
         :: nextBid > highestBid -> 
           if

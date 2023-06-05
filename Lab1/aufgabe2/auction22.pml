@@ -1,7 +1,8 @@
 // Ghost variables for individual bids
 bool bidSent[3];
+byte numOfBids;
 
-ltl winnerVerification {auctioneer@BidReceived -> <>auctioneer@WinnerDetermined}
+ltl winnerVerification {[](numOfBids == 1 -> <>auctioneer@WinnerDetermined)}
 ltl bidsFromEachSent {<> (bidSent[0] && bidSent[1] && bidSent[2])}
 
 mtype = {reject, won}
@@ -49,7 +50,7 @@ active proctype auctioneer() {
   // TODO
   do
   :: bids ? nextBid, nextBidder; 
-      BidReceived:
+      numOfBids++;
       if
         :: nextBid > highestBid -> 
           if
