@@ -1,3 +1,9 @@
+// Ghost variables for individual bids
+bool bidSent[3];
+
+ltl winnerVerification {auctioneer@BidReceived -> <>auctioneer@WinnerDetermined}
+ltl bidsFromEachSent {<> (bidSent[0] && bidSent[1] && bidSent[2])}
+
 mtype = {reject, won}
 chan bids = [2] of {int, chan}
 short winner = -1;
@@ -14,16 +20,19 @@ active [3] proctype bidder() {
   // TODO
   select( bid: 1 .. 5);
   bids ! bid, response;
+  // Update of the ghost variable upon bidding
+  bidSent[_pid] = true;
   do
-  :: response ? won -> winner = _pid ; break;
-  :: response ? reject, highestBid -> if
-          :: highestBid < 5 -> 
-                      if
-                      :: bids ! bid+1, response ;
-                      :: break
-                      fi
-          :: else -> break;
-        fi 
+  :: response ? won, eval(bid) -> winner = _pid; break
+  :: response ? reject, highestBid ->
+    if
+      :: highestBid < 5 -> 
+        if
+          :: bids ! bid+1, response
+          :: break
+        fi
+      :: else -> break;
+    fi 
   od
 }
 
@@ -32,22 +41,25 @@ active proctype auctioneer() {
   chan highestBidder;
   // derzeitiges Hoechstgebot 
   // (0 genau dann wenn noch kein Gebot einging)
-  int highestBid = 0;
+  int highestBid;
    
-  int nextBid = 0;
+  int nextBid;
   chan nextBidder;
 
   // TODO
   do
   :: bids ? nextBid, nextBidder; 
+      BidReceived:
       if
-      :: nextBid > highestBid -> 
-        if
-        :: highestBid != 0 -> highestBidder ! reject, nextBid; highestBid= nextBid; highestBidder= nextBidder
-        :: else -> highestBid= nextBid; highestBidder= nextBidder
-        fi
-      :: else -> nextBidder ! reject, highestBid
+        :: nextBid > highestBid -> 
+          if
+            :: highestBid != 0 -> highestBidder ! reject, nextBid; highestBid = nextBid; highestBidder = nextBidder
+            :: else -> highestBid = nextBid; highestBidder = nextBidder
+          fi
+        :: else -> nextBidder ! reject, highestBid
       fi
-  :: highestBid != 0 -> highestBidder ! won, highestBid; break
-  od
+  :: highestBid != 0 -> break
+  od;
+  WinnerDetermined:
+  highestBidder ! won, highestBid
 }
