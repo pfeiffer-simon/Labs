@@ -36,20 +36,24 @@ proctype node(byte edges; byte nodeNr)  {
   byte firstExplorer = -1; // stores the node number of the first explorer message
   int numMessages = edges; // counts the number of messages a node has received
   int i;
-
+  int sentMessages;
 
   do
     :: isInitiator && color == green -> initTurnGreen: printf("Message distribution successful!\n");  break
     :: isInitiator && color == white -> 
       // initiator turns red and sends an explorer message to all outgoing edges
       color = red;
-      for (i : 1 .. N) {
-        chan ch = outEdge[nodeNr - 1].port[i-1];
-        if
-          :: ch != NONE -> ch ! explorer
-          :: else -> skip
-        fi
-      }
+      i = 0;
+      sentMessages = 0;
+      do
+        :: sentMessages < edges ->
+          if
+            :: outEdge[nodeNr - 1].port[i] == NONE -> i++;
+            :: outEdge[nodeNr - 1].port[i] != NONE -> outEdge[nodeNr - 1].port[i] ! explorer; i++; sentMessages++;
+          fi
+        :: else -> break;
+      od
+
     :: !isInitiator && color == white ->
       // white node receives first explorer message from ingoing edge and stores the number of the first explorer edge
       if
@@ -62,17 +66,20 @@ proctype node(byte edges; byte nodeNr)  {
       // edge turns red
       color = red;
       // send explorer message to all outgoing edges except the first explorer edge
-      for (i : 1 .. N) {
-        if
-          :: i == firstExplorer -> skip
-          :: else -> 
-            chan ch = outEdge[nodeNr - 1].port[i-1];
-            if 
-              :: ch != NONE -> ch ! explorer
-              :: else -> skip
-            fi
-        fi
-      }
+      i = 0;
+      sentMessages = 0;
+      do
+        :: sentMessages < edges ->
+          if
+            :: outEdge[nodeNr - 1].port[i] == NONE -> i++;
+            :: outEdge[nodeNr - 1].port[i] != NONE -> 
+              if 
+                :: i == firstExplorer -> i++; sentMessages++;
+                :: else outEdge[nodeNr - 1].port[i] ! explorer; i++; sentMessages++;
+              fi
+          fi
+        :: else -> break;
+      od
     :: color == red && numMessages != 0 ->
       // red node receives explorer and echo messages, decrease number of messages
       if
@@ -104,6 +111,7 @@ turnGreen:
 
 init {
   // TODO: Modellieren der Infrastruktur
+
   int i, j;
   for (i : 0 .. N-1) {
     for (j : 0 .. N-1) {
