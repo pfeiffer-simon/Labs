@@ -33,84 +33,95 @@ proctype node(byte edges; byte nodeNr)  {
 
   // TODO: Modellieren des Algorithmus
   
-  byte firstExplorer = -1; // stores the node number of the first explorer message
-  int numMessages = edges; // counts the number of messages a node has received
-  int i;
-  int sentMessages;
+  int firstExplorer = -1; // stores the node number of the first explorer message
+  byte messages[edges];         // stores the edges over which a message has been received
+  int i;                   // counter variable
 
   do
-    :: isInitiator && color == green -> initTurnGreen: printf("Message distribution successful!\n");  break
     :: isInitiator && color == white -> 
       // initiator turns red and sends an explorer message to all outgoing edges
       color = red;
-      i = 0;
-      sentMessages = 0;
-      do
-        :: sentMessages < edges ->
-          if
-            :: outEdge[nodeNr - 1].port[i] == NONE -> i++;
-            :: outEdge[nodeNr - 1].port[i] != NONE -> outEdge[nodeNr - 1].port[i] ! explorer; i++; sentMessages++;
-          fi
-        :: else -> break;
-      od
+      for (i : 0 .. edges-1) {
+        outEdge[nodeNr - 1].port[i] ! explorer;
+      }
 
     :: !isInitiator && color == white ->
       // white node receives first explorer message from ingoing edge and stores the number of the first explorer edge
-      if
-        :: inEdge[nodeNr - 1].port[0] ? explorer -> firstExplorer = 0;
-        :: inEdge[nodeNr - 1].port[1] ? explorer -> firstExplorer = 1;
-        :: inEdge[nodeNr - 1].port[2] ? explorer -> firstExplorer = 2;
-        :: inEdge[nodeNr - 1].port[3] ? explorer -> firstExplorer = 3;
-      fi;
-      numMessages = numMessages - 1;
-      // edge turns red
-      color = red;
-      // send explorer message to all outgoing edges except the first explorer edge
-      i = 0;
-      sentMessages = 0;
-      do
-        :: sentMessages < edges ->
-          if
-            :: outEdge[nodeNr - 1].port[i] == NONE -> i++;
-            :: outEdge[nodeNr - 1].port[i] != NONE -> 
+      for (i : 0 .. edges-1) {
+        if 
+          :: nempty(inEdge[nodeNr - 1].port[i]) ->
+            inEdge[nodeNr - 1].port[i] ? explorer;
+            firstExplorer = i;
+            color = red; // edge turns red
+            // send explorer message to all outgoing edges except the first explorer edge
+            for (i : 0 .. edges-1) {
               if 
-                :: i == firstExplorer -> i++; sentMessages++;
-                :: else outEdge[nodeNr - 1].port[i] ! explorer; i++; sentMessages++;
+                :: i == firstExplorer -> skip
+                :: else               -> outEdge[nodeNr - 1].port[i] ! explorer
               fi
-          fi
-        :: else -> break;
-      od
-    :: color == red && numMessages != 0 ->
-      // red node receives explorer and echo messages, decrease number of messages
-      if
-        :: inEdge[nodeNr-1].port[0] ? _ -> skip; 
-        :: inEdge[nodeNr-1].port[1] ? _ -> skip; 
-        :: inEdge[nodeNr-1].port[2] ? _ -> skip; 
-        :: inEdge[nodeNr-1].port[3] ? _ -> skip; 
-      fi;
-      numMessages = numMessages - 1;
-    :: numMessages == 0 ->
-      // node turns green if it has received a number of messages equal to the number of ingoing edges
-      numGreen = numGreen + 1
-      numMessages = -1;
-turnGreen:
-      color = green;
-      // a non initiator node sends an echo message to the first explorer edge
-      if
-        :: isInitiator -> skip
-        :: else ->
-          chan ch = outEdge[nodeNr-1].port[firstExplorer];
-          if 
-            :: ch != NONE -> ch ! echo
-            :: else -> skip
-          fi
-      fi
-      break;
+            }
+
+            printf("<<<<<<<<<<<<<<<<<<<<<<<< %d, %d \n\n\n", firstExplorer, _pid);
+            messages[i] = 1;
+
+            int messageCount = 0;
+            for (i : 0 .. edges-1) {
+              messageCount = messageCount + messages[i]
+            }
+
+            if 
+              :: messageCount == edges ->
+                color == green;
+                if
+                  :: isInitiator -> skip
+                  :: else -> outEdge[nodeNr - 1].port[firstExplorer] ! echo
+                fi
+              :: else -> skip
+            fi
+          :: empty(inEdge[nodeNr - 1].port[i]) -> skip
+        fi
+      }
+
+    :: color == red ->
+      // red node receives explorer and echo messages, turns green if number of messages matches number of edges
+      for (i : 0 .. edges-1) {
+        if
+          :: nempty(inEdge[nodeNr - 1].port[i]) ->
+            inEdge[nodeNr-1].port[i] ? _;
+            messages[i] = 1;
+
+            int messageCount = 0;
+            for (i : 0 .. edges-1) {
+              messageCount = messageCount + messages[i]
+            }
+
+            if 
+              :: messageCount == edges ->
+                color == green;
+                if
+                  :: isInitiator -> skip
+                  :: else -> outEdge[nodeNr - 1].port[firstExplorer] ! echo
+                fi
+              :: else -> skip
+            fi
+          :: empty(inEdge[nodeNr - 1].port[i]) -> printf("test\n")
+        fi
+      }
+
+    :: !isInitiator && color == green ->
+      break
+    
+    :: isInitiator && color == green -> 
+    initTurnGreen: 
+      printf("Message distribution successful!\n");
+      break
   od
 }
 
 init {
   // TODO: Modellieren der Infrastruktur
+
+  // initialize all port with the NONE channel
 
   int i, j;
   for (i : 0 .. N-1) {
@@ -120,32 +131,31 @@ init {
     }
   }
 
-  // n1 - n2
-	outEdge[0].port[1] = pipes[0];
-	inEdge[1].port[0] = pipes[0];
+  // model the infrastructure by setting the appropriate channels, start filling the port arrays at the lowest indizes
 
-	inEdge[0].port[1] = pipes[1];
-	outEdge[1].port[0] = pipes[1];
+  // node 1
+  outEdge[0].port[0] = pipes[0]; // n1 -> n2
+  inEdge[0].port[0]  = pipes[1]; // n1 <- n1
 
-  // n2 - n3
-  outEdge[1].port[2] = pipes[2];
-  inEdge[2].port[1] = pipes[2];
-  inEdge[1].port[2] = pipes[3];  
-  outEdge[2].port[1] = pipes[3];
+  // node 2
+  outEdge[1].port[0] = pipes[1]; // n2 -> n1
+  outEdge[1].port[1] = pipes[2]; // n2 -> n3
+  outEdge[1].port[2] = pipes[3]; // n2 -> n4
+  inEdge[1].port[0]  = pipes[0]; // n2 <- n1
+  inEdge[1].port[1]  = pipes[4]; // n2 <- n3
+  inEdge[1].port[2]  = pipes[5]; // n2 <- n4
 
-  // n2 - n4
-  outEdge[1].port[3] = pipes[4];
-  inEdge[3].port[1] = pipes[4];
+  // node 3
+  outEdge[2].port[0] = pipes[4]; // n3 -> n2
+  outEdge[2].port[1] = pipes[6]; // n3 -> n4
+  inEdge[2].port[0]  = pipes[2]; // n3 <- n2
+  inEdge[2].port[1]  = pipes[7]; // n3 <- n4
 
-  inEdge[1].port[3] = pipes[5];  
-  outEdge[3].port[1] = pipes[5];
-
-  // n3 - n4
-  outEdge[2].port[3] = pipes[6];
-  inEdge[3].port[2] = pipes[6];
-
-  inEdge[2].port[3] = pipes[7];  
-  outEdge[3].port[2] = pipes[7];
+  // node 4
+  outEdge[3].port[0] = pipes[5]; // n4 -> n2
+  outEdge[3].port[1] = pipes[7]; // n4 -> n3
+  inEdge[3].port[0]  = pipes[3]; // n4 <- n2
+  inEdge[3].port[1]  = pipes[6]; // n4 <- n3
 
   atomic { // todo: brauchts das?
     // start processes
@@ -155,6 +165,5 @@ init {
     run node(2,4);
   }
 } 
-
 
 ltl initGreenAllGreen { [](node@initTurnGreen -> (numGreen == 4)) }
