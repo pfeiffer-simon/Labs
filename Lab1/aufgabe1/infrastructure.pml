@@ -34,8 +34,10 @@ proctype node(byte edges; byte nodeNr)  {
   // TODO: Modellieren des Algorithmus
   
   int firstExplorer = -1; // stores the node number of the first explorer message
-  byte messages[edges];         // stores the edges over which a message has been received
-  int i;                   // counter variable
+  byte messages[2];       // stores the edges over which a message has been received
+  int numMessages = 0;
+  int numEdges = edges;
+  int i, j;               // counter variable
 
   do
     :: isInitiator && color == white -> 
@@ -54,59 +56,34 @@ proctype node(byte edges; byte nodeNr)  {
             firstExplorer = i;
             color = red; // edge turns red
             // send explorer message to all outgoing edges except the first explorer edge
-            for (i : 0 .. edges-1) {
+            for (j : 0 .. edges-1) {
               if 
-                :: i == firstExplorer -> skip
-                :: else               -> outEdge[nodeNr - 1].port[i] ! explorer
+                :: j == firstExplorer -> skip
+                :: else               -> outEdge[nodeNr - 1].port[j] ! explorer
               fi
             }
 
-            printf("<<<<<<<<<<<<<<<<<<<<<<<< %d, %d \n\n\n", firstExplorer, _pid);
-            messages[i] = 1;
-
-            int messageCount = 0;
-            for (i : 0 .. edges-1) {
-              messageCount = messageCount + messages[i]
-            }
-
-            if 
-              :: messageCount == edges ->
-                color == green;
-                if
-                  :: isInitiator -> skip
-                  :: else -> outEdge[nodeNr - 1].port[firstExplorer] ! echo
-                fi
-              :: else -> skip
-            fi
+            numMessages = 1;
+            break;
           :: empty(inEdge[nodeNr - 1].port[i]) -> skip
         fi
       }
 
-    :: color == red ->
+    :: color == red && numMessages != numEdges ->
       // red node receives explorer and echo messages, turns green if number of messages matches number of edges
       for (i : 0 .. edges-1) {
         if
-          :: nempty(inEdge[nodeNr - 1].port[i]) ->
-            inEdge[nodeNr-1].port[i] ? _;
-            messages[i] = 1;
-
-            int messageCount = 0;
-            for (i : 0 .. edges-1) {
-              messageCount = messageCount + messages[i]
-            }
-
-            if 
-              :: messageCount == edges ->
-                color == green;
-                if
-                  :: isInitiator -> skip
-                  :: else -> outEdge[nodeNr - 1].port[firstExplorer] ! echo
-                fi
-              :: else -> skip
-            fi
-          :: empty(inEdge[nodeNr - 1].port[i]) -> printf("test\n")
+          :: nempty(inEdge[nodeNr - 1].port[i]) -> inEdge[nodeNr-1].port[i] ? _; numMessages = numMessages + 1;
+          :: empty(inEdge[nodeNr - 1].port[i])  -> printf("test\n")
         fi
       }
+
+    :: color == red && numMessages == numEdges ->
+      color = green;
+      if
+        :: isInitiator -> skip
+        :: else -> outEdge[nodeNr - 1].port[firstExplorer] ! echo
+      fi
 
     :: !isInitiator && color == green ->
       break
