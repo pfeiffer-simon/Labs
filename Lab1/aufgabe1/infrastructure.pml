@@ -34,9 +34,7 @@ proctype node(byte edges; byte nodeNr)  {
   // TODO: Modellieren des Algorithmus
   
   int firstExplorer = -1; // stores the node number of the first explorer message
-  byte messages[2];       // stores the edges over which a message has been received
   int numMessages = 0;
-  int numEdges = edges;
   int i, j;               // counter variable
 
   do
@@ -69,7 +67,7 @@ proctype node(byte edges; byte nodeNr)  {
         fi
       }
 
-    :: color == red && numMessages != numEdges ->
+    :: color == red && numMessages != edges ->
       // red node receives explorer and echo messages, turns green if number of messages matches number of edges
       for (i : 0 .. edges-1) {
         if
@@ -78,7 +76,7 @@ proctype node(byte edges; byte nodeNr)  {
         fi
       }
 
-    :: color == red && numMessages == numEdges ->
+    :: color == red && numMessages == edges ->
       color = green;
       if
         :: isInitiator -> skip
@@ -112,7 +110,7 @@ init {
 
   // node 1
   outEdge[0].port[0] = pipes[0]; // n1 -> n2
-  inEdge[0].port[0]  = pipes[1]; // n1 <- n1
+  inEdge[0].port[0]  = pipes[1]; // n1 <- n2
 
   // node 2
   outEdge[1].port[0] = pipes[1]; // n2 -> n1
