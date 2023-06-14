@@ -1,0 +1,6 @@
+
+Erklärung:
+Die Formel ist falsch, weil jeder Prozess irgendwann das Label "baking" erreichen muss, damit sie wahr wird. 
+Dies ist jedoch nicht der Fall, da der Lieferservice nicht deterministisch zufällig 
+Zutaten liefert. Daher ist es möglich, dass immer die Zutaten für Bäker 1 geliefert werden 
+und so Bäcker 2 und Bäcker 3 nicht zum Backen kommen. 
