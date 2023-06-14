@@ -1,0 +1,18 @@
+never initGreenAllGreen {    /* !([] ((! (initiatorIsGreen)) || ((numGreen==4)))) */
+T0_init:
+	do
+	:: atomic { (! (((! (initiatorIsGreen)) || ((numGreen==4))))) -> assert(!(! (((! (initiatorIsGreen)) || ((numGreen==4)))))) }
+	:: (1) -> goto T0_init
+	od;
+accept_all:
+	skip
+}
+never onlyOneInitiator {    /* !([] ((! ((numInitialized==4))) || ((numInitiator==1)))) */
+T0_init:
+	do
+	:: atomic { (! (((! ((numInitialized==4))) || ((numInitiator==1))))) -> assert(!(! (((! ((numInitialized==4))) || ((numInitiator==1)))))) }
+	:: (1) -> goto T0_init
+	od;
+accept_all:
+	skip
+}
