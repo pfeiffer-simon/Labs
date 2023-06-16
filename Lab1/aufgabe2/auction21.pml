@@ -6,13 +6,11 @@ active [3] proctype bidder() {
   // Antwortkanal
   chan response = [0] of {mtype, int};
 
-  int bid;  
+  int bid;
   int highestBid;
-  mtype status;
-  int next;
 
   // TODO
-  select( bid: 1 .. 5);
+  select(bid: 1 .. 5);
   bids ! bid, response;
   do
   :: response ? won, eval(bid) -> winner = _pid; break
@@ -20,7 +18,7 @@ active [3] proctype bidder() {
     if
       :: highestBid < 5 -> 
         if
-          :: bids ! bid+1, response
+          :: bids ! highestBid + 1, response
           :: break
         fi
       :: else -> break;
@@ -34,7 +32,6 @@ active proctype auctioneer() {
   // derzeitiges Hoechstgebot 
   // (0 genau dann wenn noch kein Gebot einging)
   int highestBid;
-   
   int nextBid;
   chan nextBidder;
 

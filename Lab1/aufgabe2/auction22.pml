@@ -1,10 +1,9 @@
-// Ghost variables for individual bids
-bool bidSent[3];
-byte numOfBids;
-byte firstBidCount;
+// Ghost variables
+byte numOfBids;      // counts how many bids the auctioneer has received
+byte firstBidCount;  // counts how many bidders have sent their first bid
 
-ltl winnerVerification {[] (numOfBids == 1 -> <>auctioneer@WinnerDetermined)}
-ltl bidsFromEachSent {<> (firstBidCount == 3)}
+ltl winnerVerification {[] (numOfBids == 1 -> <>auctioneer@WinnerDetermined)} // safety claim, formel ist erfüllt, if one bid has been received, the auction eventually reaches the WinnerDetermined label
+ltl bidsFromEachSent { <> (firstBidCount == 3) }                              // safety claim, formel ist erfüllt, sometimes all have bidder sent their first bid
 
 mtype = {reject, won}
 chan bids = [2] of {int, chan}
@@ -16,14 +15,12 @@ active [3] proctype bidder() {
 
   int bid;  
   int highestBid;
-  mtype status;
-  int next;
 
   // TODO
   select(bid: 1 .. 5);
   bids ! bid, response;
   // Update of the ghost variable upon bidding
-  firstBidCount = firstBidCount + 1;
+  firstBidCount = firstBidCount + 1; // wir nehmen an, dass ein gebot abgegeben wurde, falls es in den bids-channel gesendet werden konnte
   do
   :: response ? won, eval(bid) -> winner = _pid; break
   :: response ? reject, highestBid ->
@@ -44,14 +41,12 @@ active proctype auctioneer() {
   // derzeitiges Hoechstgebot 
   // (0 genau dann wenn noch kein Gebot einging)
   int highestBid;
-   
   int nextBid;
   chan nextBidder;
 
   // TODO
   do
   :: bids ? nextBid, nextBidder; 
-      printf("bid: %d, channel: %d", nextBid, nextBidder);
       numOfBids++;
       if
         :: nextBid > highestBid -> 
@@ -63,6 +58,6 @@ active proctype auctioneer() {
       fi
   :: highestBid != 0 -> break
   od;
-  WinnerDetermined:
+  WinnerDetermined:  // label indicates that the auction has been finished and a winner has been determined
   highestBidder ! won, highestBid
 }

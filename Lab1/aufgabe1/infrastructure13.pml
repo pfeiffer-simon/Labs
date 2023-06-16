@@ -23,20 +23,21 @@ edge outEdge[N];
 byte initiator = 3;
 
 // ghost variables
-byte numGreen = 0;
-bool initiatorIsGreen = false;
-byte numInitiator = 0;
-byte numInitialized = 0;
+byte numGreen = 0;             // count the overall number of green nodes
+bool initiatorIsGreen = false; // inidicates whether the initiator has turned green
+byte numInitiator = 0;         // counts the number of initiator nodes
+byte numInitialized = 0;       // counts the number of fully initialized nodes
 
 proctype node(byte edges; byte nodeNr)  {
   mtype message;
   bool isInitiator = (nodeNr == initiator);
 
+  // increase initiator count if boolean is set
   if
     :: isInitiator -> numInitiator = numInitiator + 1
     :: else        -> skip
   fi
-  numInitialized = numInitialized + 1
+  numInitialized = numInitialized + 1; // increase counter since nodes have been initialized
 
   // initiale Knotenfarbe ist weiss
   mtype color = white;
@@ -90,9 +91,9 @@ proctype node(byte edges; byte nodeNr)  {
       // if the number of received messages equals the number of edges, turn the node green
       
       // send echo message to first explorer if the node is not the initiator
-      numGreen = numGreen + 1;
+      numGreen = numGreen + 1; // increase number of green nodes
       if
-        :: isInitiator -> initiatorIsGreen = true; color = green; // use label to mark the point when the initiator turns green
+        :: isInitiator -> initiatorIsGreen = true; color = green; // use boolean variable to inicate when the initiator turns green
         :: else -> color = green; outEdge[nodeNr - 1].port[firstExplorer] ! echo
       fi
 
@@ -155,5 +156,5 @@ init {
   }
 } 
 
-ltl initGreenAllGreen { [](initiatorIsGreen -> (numGreen == 4)) }
-ltl onlyOneInitiator  { []((numInitialized == 4) -> (numInitiator == 1)) }
+ltl initGreenAllGreen { [](initiatorIsGreen -> (numGreen == 4)) }          // if initiator turned green, number of green nodes must be 4
+ltl onlyOneInitiator  { []((numInitialized == 4) -> (numInitiator == 1)) } // if all nodes have been initialized, there exists only one initiator

@@ -36,7 +36,7 @@ proctype node(byte edges; byte nodeNr)  {
   int i, j;               // counter variables
 
   do
-    :: isInitiator && color == white -> 
+    :: isInitiator && color == white ->
       // initiator turns red and sends an explorer message to all outgoing edges
       color = red;
       for (i : 0 .. edges-1) {
