@@ -63,5 +63,5 @@ init {
 //Es gilt immer, dass die Anzahl der backenden Bäcker kleiner gleich 1 ist 
 ltl onlyOneBaker {[](critical <= 1)}
 
-// Wenn der Bcäker bereit ist, dann wird er irgendwann auch zum Backen kommen
+// Wenn der Bäcker bereit ist, dann wird er irgendwann auch zum Backen kommen
 ltl eventuallyBaking {[](baker@ready -> (<>(baker@baking)))}

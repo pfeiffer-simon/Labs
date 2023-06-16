@@ -1,9 +1,10 @@
 // Ghost variables for individual bids
 bool bidSent[3];
 byte numOfBids;
+byte firstBidCount;
 
-ltl winnerVerification {[](numOfBids == 1 -> <>auctioneer@WinnerDetermined)}
-ltl bidsFromEachSent {<> (bidSent[0] && bidSent[1] && bidSent[2])}
+ltl winnerVerification {[] (numOfBids == 1 -> <>auctioneer@WinnerDetermined)}
+ltl bidsFromEachSent {<> (firstBidCount == 3)}
 
 mtype = {reject, won}
 chan bids = [2] of {int, chan}
@@ -19,17 +20,17 @@ active [3] proctype bidder() {
   int next;
 
   // TODO
-  select( bid: 1 .. 5);
+  select(bid: 1 .. 5);
   bids ! bid, response;
   // Update of the ghost variable upon bidding
-  bidSent[_pid] = true;
+  firstBidCount = firstBidCount + 1;
   do
   :: response ? won, eval(bid) -> winner = _pid; break
   :: response ? reject, highestBid ->
     if
-      :: highestBid < 5 -> 
+      :: highestBid < 5 ->
         if
-          :: bids ! bid+1, response
+          :: bids ! highestBid + 1, response
           :: break
         fi
       :: else -> break;
@@ -50,6 +51,7 @@ active proctype auctioneer() {
   // TODO
   do
   :: bids ? nextBid, nextBidder; 
+      printf("bid: %d, channel: %d", nextBid, nextBidder);
       numOfBids++;
       if
         :: nextBid > highestBid -> 
