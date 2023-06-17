@@ -1,6 +1,10 @@
 
 Erklärung:
-Die Formel ist falsch, weil jeder Prozess irgendwann das Label "baking" erreichen muss, damit sie wahr wird. 
-Dies ist jedoch nicht der Fall, da der Lieferservice nicht deterministisch zufällig 
-Zutaten liefert. Daher ist es möglich, dass immer die Zutaten für Bäker 1 geliefert werden 
-und so Bäcker 2 und Bäcker 3 nicht zum Backen kommen. 
+Die zweite Eigenschaft ist falsch, weil jeder Prozess, der eine Zutat empfangen kann, irgendwann auch das Label "baking" erreichen muss, damit sie wahr wird. 
+Dies ist jedoch nicht der Fall, da der Lieferservice nicht deterministisch zufällig  Zutaten liefert. 
+Daher ist es möglich, dass immer die Zutaten für Bäker 1 geliefert werden und so Bäcker 2 und Bäcker 3 nicht zum Backen kommen.
+Die Starvation von Bäcker 2 und Bäcker 3 wird somit nicht verhindert.
+
+In der angehängten Trail-Datei gibt es eine Zeile "<<<<<START OF CYCLE>>>>>". Nach dieser Zeile werden die jeweiligen Zutaten an
+den Bäcker 1 gesendet, von diesem empfangen und danach der Lieferdienst wieder zum senden aufgefordert. Da diese
+in einem Zyklus geschieht, werden diese Aktionen immer wieder ausgeführt und keine Zutaten an die anderen Bäcker gesendet.

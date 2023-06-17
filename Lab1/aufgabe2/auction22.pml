@@ -2,8 +2,10 @@
 byte numOfBids;      // counts how many bids the auctioneer has received
 byte firstBidCount;  // counts how many bidders have sent their first bid
 
-ltl winnerVerification {[] (numOfBids == 1 -> <>auctioneer@WinnerDetermined)} // safety claim, formel ist erfüllt, if one bid has been received, the auction eventually reaches the WinnerDetermined label
-ltl bidsFromEachSent { <> (firstBidCount == 3) }                              // safety claim, formel ist erfüllt, sometimes all have bidder sent their first bid
+// safety claim, formel ist erfüllt, if one bid has been received, the auction eventually reaches the WinnerDetermined label
+ltl winnerVerification {[] (numOfBids == 1 -> <>auctioneer@WinnerDetermined)}
+// liveness claim, formel ist erfüllt, sometimes all have bidder sent their first bid
+ltl bidsFromEachSent { <> (firstBidCount == 3) }
 
 mtype = {reject, won}
 chan bids = [2] of {int, chan}
